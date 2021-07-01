@@ -5,6 +5,7 @@
  */
 package net.napilnik.birt.test;
 
+import com.ibm.icu.util.TimeZone;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,7 +27,9 @@ import org.eclipse.birt.report.engine.api.IReportDocument;
 
 import org.eclipse.birt.report.engine.api.IReportEngine;
 import org.eclipse.birt.report.engine.api.IReportEngineFactory;
+import org.eclipse.birt.report.engine.api.IReportRunnable;
 import org.eclipse.birt.report.engine.api.IResultSetItem;
+import org.eclipse.birt.report.engine.api.IRunAndRenderTask;
 import org.eclipse.birt.report.engine.api.PDFRenderOption;
 import org.eclipse.birt.report.engine.api.RenderOption;
 import org.eclipse.birt.report.engine.api.TOCNode;
@@ -59,8 +62,8 @@ public class NewMain {
             ex.printStackTrace();
         }
         // Run reports, etc.
-
         IReportDocument ird = engine.openReportDocument("reportdocument_v0.rptdocument");
+
         //get root node
         TOCNode td = ird.findTOC(null);
         List children = td.getChildren();
@@ -123,25 +126,25 @@ public class NewMain {
                 NewMain.class.getClassLoader());
         IRenderOption options = new RenderOption();
 
-//        if (options.getOutputFormat().equalsIgnoreCase("html")) {
-//        options.setOutputFormat("html");
-//        options.setOutputFileName("output/resample/eventorder.html");
-//            HTMLRenderOption htmlOptions = new HTMLRenderOption(options);
-//            htmlOptions.setImageDirectory("output/image");
-//            htmlOptions.setHtmlPagination(false);
-//            //set this if you want your image source url to be altered
-//            //If using the setBaseImageURL, make sure
-//            //to set image handler to HTMLServerImageHandler
-//            htmlOptions.setBaseImageURL("http://myhost/prependme?image=");
-//            htmlOptions.setHtmlRtLFlag(false);
-//            htmlOptions.setEmbeddable(false);
-//        } else if (options.getOutputFormat().equalsIgnoreCase("pdf")) {
-        options.setOutputFormat("pdf");
-        options.setOutputFileName("output/resample/eventorder.pdf");
-        PDFRenderOption pdfOptions = new PDFRenderOption(options);
-        pdfOptions.setOption(IPDFRenderOption.FIT_TO_PAGE, new Boolean(true));
-        pdfOptions.setOption(IPDFRenderOption.PAGEBREAK_PAGINATION_ONLY, new Boolean(true));
-//        }
+        options.setOutputFormat("html");
+        if (options.getOutputFormat().equalsIgnoreCase("html")) {
+            options.setOutputFileName("output/resample/eventorder.html");
+            HTMLRenderOption htmlOptions = new HTMLRenderOption(options);
+            htmlOptions.setImageDirectory("output/image");
+            htmlOptions.setHtmlPagination(false);
+            //set this if you want your image source url to be altered
+            //If using the setBaseImageURL, make sure
+            //to set image handler to HTMLServerImageHandler
+            htmlOptions.setBaseImageURL("http://myhost/prependme?image=");
+            htmlOptions.setHtmlRtLFlag(false);
+            htmlOptions.setEmbeddable(false);
+        } else if (options.getOutputFormat().equalsIgnoreCase("pdf")) {
+
+            options.setOutputFileName("output/resample/eventorder.pdf");
+            PDFRenderOption pdfOptions = new PDFRenderOption(options);
+            pdfOptions.setOption(IPDFRenderOption.FIT_TO_PAGE, new Boolean(true));
+            pdfOptions.setOption(IPDFRenderOption.PAGEBREAK_PAGINATION_ONLY, new Boolean(true));
+        }
         //Use this method if you want to provide your own action handler
 //        options.setActionHandler(new MyActionHandler());
         //file based images
@@ -153,6 +156,26 @@ public class NewMain {
         task2.setPageRange("1-2");
         task2.render();
         ird.close();
+
+        IReportRunnable irr = engine.openReportDesign("timeZoneTest.xml");
+        IRunAndRenderTask createRunAndRenderTask = engine.createRunAndRenderTask(irr);
+        createRunAndRenderTask.getAppContext().put(EngineConstants.APPCONTEXT_CLASSLOADER_KEY,
+                NewMain.class.getClassLoader());
+
+        createRunAndRenderTask.setLocale(com.ibm.icu.util.ULocale.US);
+        task.setTimeZone(TimeZone.getTimeZone("UTC"));
+        IRenderOption option = new HTMLRenderOption();
+        option.setOutputFormat("html"); //$NON-NLS-1$
+
+//        options = new RenderOption();
+//        options.setOutputFormat("pdf");
+        options.setOutputFileName("output/resample/timeZoneTest.html");
+//        PDFRenderOption pdfOptions = new PDFRenderOption(options);
+//        pdfOptions.setOption(IPDFRenderOption.FIT_TO_PAGE, new Boolean(true));
+//        pdfOptions.setOption(IPDFRenderOption.PAGEBREAK_PAGINATION_ONLY, new Boolean(true));
+
+        createRunAndRenderTask.setRenderOption(options);
+        createRunAndRenderTask.run();
 
         // destroy the engine.
         if (engine != null) {
